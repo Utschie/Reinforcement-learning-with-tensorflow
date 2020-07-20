@@ -8,12 +8,12 @@ View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 Using:
 Tensorflow: r1.2
 """
-
+#tensorflow 2.0中使用tensorflow 1.0的方法要用tf.compat.v1
 import numpy as np
 import tensorflow as tf
 
 np.random.seed(1)
-tf.set_random_seed(1)
+tf.compat.v1.set_random_seed(1)
 
 
 # Deep Q Network off-policy
@@ -33,13 +33,13 @@ class DeepQNetwork:
     ):
         self.n_actions = n_actions
         self.n_features = n_features
-        self.lr = learning_rate
-        self.gamma = reward_decay
-        self.epsilon_max = e_greedy
+        self.lr = learning_rate#学习率α，也叫步长
+        self.gamma = reward_decay#折现率γ
+        self.epsilon_max = e_greedy#预设的ε-贪心率最大值
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
-        self.batch_size = batch_size
-        self.epsilon_increment = e_greedy_increment
+        self.batch_size = batch_size#批大小，每一次迭代用的样本数量
+        self.epsilon_increment = e_greedy_increment#给定ε-贪心率参数
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
 
         # total learning step
@@ -49,56 +49,56 @@ class DeepQNetwork:
         self.memory = np.zeros((self.memory_size, n_features * 2 + 2))
 
         # consist of [target_net, evaluate_net]
-        self._build_net()
+        self._build_net()#创建神经网络
 
-        t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net')
-        e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net')
+        t_params = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope='target_net')
+        e_params = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope='eval_net')
 
-        with tf.variable_scope('hard_replacement'):
-            self.target_replace_op = [tf.assign(t, e) for t, e in zip(t_params, e_params)]
+        with tf.compat.v1.variable_scope('hard_replacement'):
+            self.target_replace_op = [tf.compat.v1.assign(t, e) for t, e in zip(t_params, e_params)]
 
-        self.sess = tf.Session()
+        self.sess = tf.compat.v1.Session()
 
         if output_graph:
             # $ tensorboard --logdir=logs
-            tf.summary.FileWriter("logs/", self.sess.graph)
+            tf.compat.v1.summary.FileWriter("logs/", self.sess.graph)
 
-        self.sess.run(tf.global_variables_initializer())
+        self.sess.run(tf.compat.v1.global_variables_initializer())
         self.cost_his = []
 
     def _build_net(self):
         # ------------------ all inputs ------------------------
-        self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input State
-        self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')  # input Next State
-        self.r = tf.placeholder(tf.float32, [None, ], name='r')  # input Reward
-        self.a = tf.placeholder(tf.int32, [None, ], name='a')  # input Action
+        self.s = tf.compat.v1.placeholder(tf.compat.v1.float32, [None, self.n_features], name='s')  # input State
+        self.s_ = tf.compat.v1.placeholder(tf.compat.v1.float32, [None, self.n_features], name='s_')  # input Next State
+        self.r = tf.compat.v1.placeholder(tf.compat.v1.float32, [None, ], name='r')  # input Reward
+        self.a = tf.compat.v1.placeholder(tf.compat.v1.int32, [None, ], name='a')  # input Action
 
-        w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+        w_initializer, b_initializer = tf.compat.v1.random_normal_initializer(0., 0.3), tf.compat.v1.constant_initializer(0.1)
 
         # ------------------ build evaluate_net ------------------
-        with tf.variable_scope('eval_net'):
-            e1 = tf.layers.dense(self.s, 20, tf.nn.relu, kernel_initializer=w_initializer,
+        with tf.compat.v1.variable_scope('eval_net'):
+            e1 = tf.compat.v1.layers.dense(self.s, 20, tf.compat.v1.nn.relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='e1')
-            self.q_eval = tf.layers.dense(e1, self.n_actions, kernel_initializer=w_initializer,
+            self.q_eval = tf.compat.v1.layers.dense(e1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='q')
 
         # ------------------ build target_net ------------------
-        with tf.variable_scope('target_net'):
-            t1 = tf.layers.dense(self.s_, 20, tf.nn.relu, kernel_initializer=w_initializer,
+        with tf.compat.v1.variable_scope('target_net'):
+            t1 = tf.compat.v1.layers.dense(self.s_, 20, tf.compat.v1.nn.relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='t1')
-            self.q_next = tf.layers.dense(t1, self.n_actions, kernel_initializer=w_initializer,
+            self.q_next = tf.compat.v1.layers.dense(t1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='t2')
 
-        with tf.variable_scope('q_target'):
-            q_target = self.r + self.gamma * tf.reduce_max(self.q_next, axis=1, name='Qmax_s_')    # shape=(None, )
-            self.q_target = tf.stop_gradient(q_target)
-        with tf.variable_scope('q_eval'):
-            a_indices = tf.stack([tf.range(tf.shape(self.a)[0], dtype=tf.int32), self.a], axis=1)
-            self.q_eval_wrt_a = tf.gather_nd(params=self.q_eval, indices=a_indices)    # shape=(None, )
-        with tf.variable_scope('loss'):
-            self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval_wrt_a, name='TD_error'))
-        with tf.variable_scope('train'):
-            self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+        with tf.compat.v1.variable_scope('q_target'):
+            q_target = self.r + self.gamma * tf.compat.v1.reduce_max(self.q_next, axis=1, name='Qmax_s_')    # shape=(None, )
+            self.q_target = tf.compat.v1.stop_gradient(q_target)
+        with tf.compat.v1.variable_scope('q_eval'):
+            a_indices = tf.compat.v1.stack([tf.compat.v1.range(tf.compat.v1.shape(self.a)[0], dtype=tf.compat.v1.int32), self.a], axis=1)
+            self.q_eval_wrt_a = tf.compat.v1.gather_nd(params=self.q_eval, indices=a_indices)    # shape=(None, )
+        with tf.compat.v1.variable_scope('loss'):
+            self.loss = tf.compat.v1.reduce_mean(tf.compat.v1.squared_difference(self.q_target, self.q_eval_wrt_a, name='TD_error'))
+        with tf.compat.v1.variable_scope('train'):
+            self._train_op = tf.compat.v1.train.RMSPropOptimizer(self.lr).minimize(self.loss)
 
     def store_transition(self, s, a, r, s_):
         if not hasattr(self, 'memory_counter'):

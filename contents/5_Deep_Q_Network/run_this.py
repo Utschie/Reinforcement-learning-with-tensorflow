@@ -4,11 +4,11 @@ from RL_brain import DeepQNetwork
 
 def run_maze():
     step = 0
-    for episode in range(300):
+    for episode in range(300):#episode就是一个序列的意思，从开始到结束，总共300次过程，每次过程有很多幕，总幕数（包括之前的过程）超200后每5幕学一次
         # initial observation
         observation = env.reset()
 
-        while True:
+        while True:#无限循环直到本次过程终止
             # fresh env
             env.render()
 
@@ -21,7 +21,7 @@ def run_maze():
             RL.store_transition(observation, action, reward, observation_)
 
             if (step > 200) and (step % 5 == 0):
-                RL.learn()
+                RL.learn()#从200幕后，每5幕进行一次学习，更新evaluate-Q网络参数，每200次学习更新一次目标Q网络参数，学习的大脑中的记忆是最近2000幕，也就是可能跨越过程选batch
 
             # swap observation
             observation = observation_
@@ -43,8 +43,8 @@ if __name__ == "__main__":
                       learning_rate=0.01,
                       reward_decay=0.9,
                       e_greedy=0.9,
-                      replace_target_iter=200,
-                      memory_size=2000,
+                      replace_target_iter=200,#每200次学习更新一次target-Q参数
+                      memory_size=2000,#记忆容量提到2000，即在最近2000幕中随机选batch
                       # output_graph=True
                       )
     env.after(100, run_maze)
