@@ -18,7 +18,7 @@ np.random.seed(1)
 tf.compat.v1.set_random_seed(1)
 
 
-# Deep Q Network off-policy，定义了模型的超参数，比如ε-贪心率，折现率γ，
+# Deep Q Network off-policy，定义了模型的超参数，比如ε-贪心率，折现率γ。
 class DeepQNetwork:
     def __init__(
             self,
