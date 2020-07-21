@@ -37,10 +37,10 @@ class DeepQNetwork:
         self.n_features = n_features#环境状态特征数
         self.lr = learning_rate#学习率α，也叫步长
         self.gamma = reward_decay#折现率γ
-        self.epsilon_max = e_greedy#预设的ε-贪心率最大值
+        self.epsilon_max = e_greedy#预设的ε-贪心率最大值，ε是随机选择的概率
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
-        self.batch_size = batch_size#批大小，每一次迭代用的样本数量
+        self.batch_size = batch_size#批大小，每一次迭代用的样本数量，据说batch size大于1，网络梯度更加稳定
         self.epsilon_increment = e_greedy_increment#给定ε-贪心率参数
         self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
 
@@ -201,9 +201,9 @@ class DeepQNetwork:
                                                 self.q_target: q_target})#用刚才的q_target值把网络中的q_target更新，求出loss，再运行train_op更新evaluate-Q网络参数
         self.cost_his.append(self.cost)
 
-        # increasing epsilon，随着训练越往后，随机选择机会越来越大
+        # increasing epsilon，提高随机率
         self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
-        self.learn_step_counter += 1#evaluate网络参数每更新一次，学习步+1
+        self.learn_step_counter += 1#evaluate网络参数每更新一次(learn函数每运行一次)，学习步数+1
 
     def plot_cost(self):#画图
         import matplotlib.pyplot as plt

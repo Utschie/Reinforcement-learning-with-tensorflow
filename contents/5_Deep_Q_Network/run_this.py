@@ -21,7 +21,7 @@ def run_maze():
             RL.store_transition(observation, action, reward, observation_)
 
             if (step > 200) and (step % 5 == 0):
-                RL.learn()#从200幕后，每5幕进行一次学习，更新evaluate-Q网络参数，每200次学习更新一次目标Q网络参数，学习的大脑中的记忆是最近2000幕，也就是可能跨越过程选batch
+                RL.learn()#从200幕后，每5幕进行一次学习（5就是学习频率learning_freq），更新evaluate-Q网络参数，每200次学习更新一次目标Q网络参数，学习的大脑中的记忆是最近2000幕，也就是可能跨越过程选batch
 
             # swap observation
             observation = observation_
@@ -29,7 +29,7 @@ def run_maze():
             # break while loop when end of this episode
             if done:
                 break
-            step += 1
+            step += 1#每进行一幕，step+1
 
     # end of game
     print('game over')
