@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
+
 np.random.seed(1)
 tf.compat.v1.set_random_seed(1)
 
@@ -125,7 +126,7 @@ class DeepQNetwork:
         # replace the old memory with new memory
         index = self.memory_counter % self.memory_size
         self.memory[index, :] = transition#index最大值也就499，也就是一个memory最多能存储500次转移，如果又来了一轮，则用最新的转移代替最老的，保证memory里总是最新的500次转移
-
+                   #此处的引用方式是numpy对象的引用方式，切片啊啥的，memory是一个高维数组，第一个维度是index，各个维度下面是一个元组
         self.memory_counter += 1#进行转移的幕数
 
     def choose_action(self, observation):
@@ -211,6 +212,8 @@ class DeepQNetwork:
         plt.ylabel('Cost')
         plt.xlabel('training steps')
         plt.show()
+
+
 
 
 
