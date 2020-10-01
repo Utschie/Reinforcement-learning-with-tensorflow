@@ -63,7 +63,7 @@ for i_episode in range(1000):
 
             print("episode:", i_episode, "  reward:", int(running_reward))
 
-            vt = RL.learn()  # train
+            vt = RL.learn()  # train#回合更新，即本次游戏所有幕结束后更新
 
             if i_episode == 30:
                 plt.plot(vt)  # plot the episode vt

@@ -75,11 +75,13 @@ class PolicyGradient:
 
         with tf.name_scope('loss'):
             # to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
+            #就是计算出本回合每一步（因为这个函数的0维是batch_size,即本回合所有步数）实际采取的行动概率和模型预测的行动的概率的差别（因为是随机策略，所以一定有差别），即目标随机策略和实际随机策略的差别
             neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=all_act, labels=self.tf_acts)   # this is negative log of chosen action
             # or in this way:
             # neg_log_prob = tf.reduce_sum(-tf.log(self.all_act_prob)*tf.one_hot(self.tf_acts, self.n_actions), axis=1)
             loss = tf.reduce_mean(neg_log_prob * self.tf_vt)  # reward guided loss
-
+            #reward来表示这次的实际行动值不值得进行某个方向的更新，如果这次随机出来的策略reward大，那就让概率再往那个方向偏向一些
+            #loss里的这个tf_vt实际上是每一次行动根据其后面的行动直到回合结束计算出来的折现值，即这次行动在本回合的reward
         with tf.name_scope('train'):
             self.train_op = tf.train.AdamOptimizer(self.lr).minimize(loss)
 
@@ -95,7 +97,7 @@ class PolicyGradient:
 
     def learn(self):
         # discount and normalize episode reward
-        discounted_ep_rs_norm = self._discount_and_norm_rewards()
+        discounted_ep_rs_norm = self._discount_and_norm_rewards()#这里每一步的收益都是从后面的收益计算而来的折现值，而不是仅仅当前值
 
         # train on episode
         self.sess.run(self.train_op, feed_dict={
