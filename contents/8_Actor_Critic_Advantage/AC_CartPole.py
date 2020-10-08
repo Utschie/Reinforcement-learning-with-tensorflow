@@ -63,7 +63,7 @@ class Actor(object):
             )
 
         with tf.variable_scope('exp_v'):
-            log_prob = tf.log(self.acts_prob[0, self.a])
+            log_prob = tf.log(self.acts_prob[0, self.a])#acts_prob是经过softmax之后的又log那实际上就是
             self.exp_v = tf.reduce_mean(log_prob * self.td_error)  # advantage (TD_error) guided loss
 
         with tf.variable_scope('train'):
