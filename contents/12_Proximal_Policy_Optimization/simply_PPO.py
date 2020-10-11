@@ -140,10 +140,10 @@ for ep in range(EP_MAX):
         ep_r += r
 
         # update ppo
-        if (t+1) % BATCH == 0 or t == EP_LEN-1:
-            v_s_ = ppo.get_v(s_)
+        if (t+1) % BATCH == 0 or t == EP_LEN-1:#即如果到了终盘
+            v_s_ = ppo.get_v(s_)#获得终盘的状态价值
             discounted_r = []
-            for r in buffer_r[::-1]:
+            for r in buffer_r[::-1]:#这里[::-1]表示的是从头到尾翻转
                 v_s_ = r + GAMMA * v_s_
                 discounted_r.append(v_s_)
             discounted_r.reverse()
